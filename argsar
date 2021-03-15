@@ -1,0 +1,120 @@
+import argparse
+from ecdsa import SigningKey, VerifyingKey, NIST256p
+from pathlib import Path
+import hashlib
+
+parser = argparse.ArgumentParser(
+    description="Generate key pairs and e-signature for binary file and appends signature as well")
+parser.add_argument("-genkey", type=str,
+                    help=" Generating public.bin and private.bin files")
+parser.add_argument("-Dir", type=str,
+                    help=" Provide Output path to store files")
+parser.add_argument("-Hashgen", type=str,
+                    help=" Generating Hash value for binary image")
+parser.add_argument("-i", type=str,
+                    help=" Provide Input Binary Image path")
+parser.add_argument("-gensign", type=str,
+                    help=" Generate signature file")
+parser.add_argument("-Privatekey", type=str,
+                    help=" Provide Private Key path(Private_key.bin)")
+parser.add_argument("-verify", type=str,
+                    help=" Verifies input signature file against the input public-key file and input binary-image.")
+parser.add_argument("-Publickey", type=str,
+                    help="Provide Public Key path(Public_key.bin)")
+parser.add_argument("-signature", type=str,
+                    help=" Input signature file for signature verification")
+parser.add_argument("-append", type=str,
+                    help=" Append signature to input binary image")
+
+args = parser.parse_args()
+# Generating Public and Private Key
+hash_value = list()
+
+if args.genkey == "Keypair" and args.Dir != None:
+    Prk = SigningKey.generate(curve=NIST256p)  # Generating Private key
+    Prk_string = Prk.to_string()  # store key in form of bytes
+    Puk = Prk.verifying_key  # Generating public key
+    Puk_string = Puk.to_string()  # store key in form of bytes
+    vk2 = VerifyingKey.from_string(Puk_string, curve=NIST256p)
+    # PrkString = Prk_string.hex()  # store key in form of str
+    # PukString = vk2.to_string().hex()  # store key in form of str
+    if Path(args.Dir).is_dir():
+        print()
+    else:
+        Path(args.Dir).mkdir(parents=True, exist_ok=False)
+    file = open(args.Dir + "\\Private_key.bin", "wb")  # creating private.bin file
+    file.write(Prk_string)
+    file.close()
+
+    file1 = open(args.Dir + "\\Public_key.bin", "wb")  # creating public.bin file
+    file1.write(Puk_string)
+    file1.close()
+    print('''INFO:root:*** Generating key-pair. ***
+INFO:root:--- Key-pair successfully generated. ---''')
+
+# Generating Hash Value for Binary image
+
+if (args.Hashgen == "hash" and args.i != None) or (args.gensign == "sign"):
+    try:
+        f2 = open(args.i, "rb")
+        data = f2.read()  # read entire file as bytes
+        readable_hash = hashlib.sha256(data).hexdigest()
+        if args.gensign != "sign":
+            print("Hash_value: ", readable_hash)
+        hash_value.append(readable_hash)
+        f2.close()
+    except FileNotFoundError:
+        print('File does not exist, Please provide the correct path')
+
+# Generating Signature
+if args.gensign == "sign" and args.Dir != None and args.Privatekey != None:
+    e_sign = bytes(hash_value[0], "utf-8")  # converting hex to bytes
+    f5 = open(args.Privatekey, "rb")
+    f6 = f5.read()
+    Prk1 = SigningKey.from_string(f6, curve=NIST256p)  # Re-generates private key
+    signature = Prk1.sign(e_sign)  # takes input as bytes
+    print(type(signature))
+    if Path(args.Dir).is_dir():
+        print()
+    else:
+        Path(args.Dir).mkdir(parents=True, exist_ok=False)
+    f2 = open(args.Dir + "\\Signature.bin", "wb")
+    f2.write(signature)
+    f2.close()
+    print("Signature.bin file is Generated ")
+
+# Verification
+if args.verify == "Verify":
+    f7 = open(args.Publickey, "rb")
+    f8 = f7.read()
+    Puk1 = VerifyingKey.from_string(f8, curve=NIST256p)
+    signature = open(args.signature, "rb")
+    f9 = signature.read()
+    hash_value = list()
+    hash = open(args.i, "rb")
+    data = hash.read()  # read entire file as bytes
+    readable_hash = hashlib.sha256(data).hexdigest()
+    print(type(readable_hash))
+    hash_value.append(readable_hash)
+    readable_hash = bytes(hash_value[0], "utf-8")
+    Verify = Puk1.verify(f9, readable_hash)
+    if Verify == True:
+        print("Ok, Verified")
+        print("Verification is Done ")
+
+# Generating Signed Document
+if args.append == "append":
+    f3 = open(args.i, 'ab')
+    f4 = open(args.signature, 'rb')
+    f5 = f4.read()
+    f3.write(f5)
+    f3.close()
+    print("Signed document is generated")
+
+'''
+# -genkey Keypair -Dir .\
+# -Hashgen hash -i slick.bin
+# -gensign sign -i slick.bin -Privatekey Private_key.bin -Dir .\
+# -verify Verify -i slick.bin -signature Signature.bin -Publickey Public_key.bin
+# -append append -i slick.bin -signature Signature.bin
+'''
