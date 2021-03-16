@@ -13,8 +13,6 @@ parser.add_argument("-Hashgen", type=str,
                     help=" Generating Hash value for binary image")
 parser.add_argument("-i", type=str,
                     help=" Provide Input Binary Image path")
-parser.add_argument("-gensign", type=str,
-                    help=" Generate signature file")
 parser.add_argument("-Privatekey", type=str,
                     help=" Provide Private Key path(Private_key.bin)")
 parser.add_argument("-verify", type=str,
@@ -25,32 +23,37 @@ parser.add_argument("-signature", type=str,
                     help=" Input signature file for signature verification")
 parser.add_argument("-append", type=str,
                     help=" Append signature to input binary image")
+parser.add_argument("-gensign", type=str,
+                    help=" Generate signature file")
 
 args = parser.parse_args()
 # Generating Public and Private Key
 hash_value = list()
 
-if args.genkey == "Keypair" and args.Dir != None:
-    Prk = SigningKey.generate(curve=NIST256p)  # Generating Private key
-    Prk_string = Prk.to_string()  # store key in form of bytes
-    Puk = Prk.verifying_key  # Generating public key
-    Puk_string = Puk.to_string()  # store key in form of bytes
-    vk2 = VerifyingKey.from_string(Puk_string, curve=NIST256p)
-    # PrkString = Prk_string.hex()  # store key in form of str
-    # PukString = vk2.to_string().hex()  # store key in form of str
-    if Path(args.Dir).is_dir():
-        print()
-    else:
-        Path(args.Dir).mkdir(parents=True, exist_ok=False)
-    file = open(args.Dir + "\\Private_key.bin", "wb")  # creating private.bin file
-    file.write(Prk_string)
-    file.close()
+if args.genkey == "Keypair":
+        Prk = SigningKey.generate(curve=NIST256p)  # Generating Private key
+        Prk_string = Prk.to_string()  # store key in form of bytes
+        Puk = Prk.verifying_key  # Generating public key
+        Puk_string = Puk.to_string()  # store key in form of bytes
+        vk2 = VerifyingKey.from_string(Puk_string, curve=NIST256p)
+        # PrkString = Prk_string.hex()  # store key in form of str
+        # PukString = vk2.to_string().hex()  # store key in form of str
+        if Path(args.Dir).is_dir():
+            print()
+        else:
+            Path(args.Dir).mkdir(parents=True, exist_ok=False)
+        file = open(args.Dir + "\\Private_key.bin", "wb")  # creating private.bin file
+        file.write(Prk_string)
+        file.close()
 
-    file1 = open(args.Dir + "\\Public_key.bin", "wb")  # creating public.bin file
-    file1.write(Puk_string)
-    file1.close()
-    print('''INFO:root:*** Generating key-pair. ***
-INFO:root:--- Key-pair successfully generated. ---''')
+        file1 = open(args.Dir + "\\Public_key.bin", "wb")  # creating public.bin file
+        file1.write(Puk_string)
+        file1.close()
+        print('''INFO:root:*** Generating key-pair. *** 
+        INFO:root:--- Key-pair successfully generated. ---''')
+elif args.genkey != None:
+        print('''ERROR:root:Wrong command.
+                     Usage: python test.py -genkey Keypair  -Dir <directory>''')
 
 # Generating Hash Value for Binary image
 
@@ -64,7 +67,7 @@ if (args.Hashgen == "hash" and args.i != None) or (args.gensign == "sign"):
         hash_value.append(readable_hash)
         f2.close()
     except FileNotFoundError:
-        print('File does not exist, Please provide the correct path')
+        print('ERROR:File does not exist, Please provide the correct path')
 
 # Generating Signature
 if args.gensign == "sign" and args.Dir != None and args.Privatekey != None:
