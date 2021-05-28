@@ -1,27 +1,30 @@
-# Application Start
+import difflib
 
-___author__ = "Gowtham Bavireddy"
+my_file = open("file1.txt", "r")
+content = my_file.read()
+content_list = content.split("\n")
+my_file.close()
 
-import logging
-from tkinter import *
-from tkinter import messagebox
-from ui_screens.login_screen import LoginPage
+my_file = open("file2.txt", "r")
+content = my_file.read()
+content_list1 = content.split("\n")
+my_file.close()
 
-logging.basicConfig(filename='output.log', filemode='w', format='%(asctime)s - %(levelname)s - %(message)s',
-                    level=logging.INFO, datefmt='%d-%b-%y %H:%M:%S')
+lines1 = content_list
+lines2 = content_list1
 
+diff = difflib.unified_diff(lines1, lines2, lineterm='', n=0)
+lines = list(diff)[2:]
 
-def on_exit():
-    if messagebox.askyesno("EXIT", "Do you want to EXIT Application?"):
-        tk_obj.destroy()
+added = [line[1:] for line in lines if line[0] == '+']
+removed = [line[1:] for line in lines if line[0] == '-']
 
+print('additions:')
+for line in added:
+    print(line)
+print()
 
-if __name__ == "__main__":
-    tk_obj = Tk()
-    tk_obj.geometry("%dx%d+0+0" % (tk_obj.winfo_screenwidth(), tk_obj.winfo_screenheight()))
-    tk_obj.title("Login Page")
-    tk_obj.iconbitmap('logo\\philipsicon.ico')
-    tk_obj.protocol("WM_DELETE_WINDOW", on_exit)
-    login = LoginPage(tk_obj)
-
-    tk_obj.mainloop()
+print('Deletions:')
+for line in removed:
+    print(line)
+print()
